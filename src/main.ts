@@ -22,6 +22,7 @@ app.appendChild(canvas);
 
 let isDrawing = false;
 const points: { x: number; y: number }[][] = [];
+let redos: { x: number; y: number }[][] = [];
 const context = canvas.getContext("2d");
 
 // mouse events
@@ -31,6 +32,7 @@ canvas.addEventListener("mousedown", (e) => {
   const y = e.offsetY;
   isDrawing = true;
   points.push([{ x, y }]);
+  redos = [];
 });
 
 canvas.addEventListener("mousemove", (e) => {
@@ -83,4 +85,32 @@ clear.addEventListener('click', () => {
     points.length = 0;
     canvas.dispatchEvent(new Event("drawing-changed"));
   }
+});
+
+// undo button
+
+let undo = document.createElement('button');
+undo.innerHTML = 'undo';
+undo.className = 'clear-button';
+app.appendChild(undo);
+undo.addEventListener('click', (e) => {
+    const undo = points.pop();
+    if (undo) {
+      redos.push(undo);
+    }
+    canvas.dispatchEvent(new Event("drawing-changed")); 
+});
+
+// redo button
+let redo = document.createElement('button');
+redo.innerHTML = 'redo';
+redo.className = 'clear-button';
+app.appendChild(redo);
+redo.addEventListener('click', (e) => {
+    const redopop = redos.pop();
+    
+    if (redopop) {
+      points.push(redopop);
+    }
+    canvas.dispatchEvent(new Event("drawing-changed")); 
 });
