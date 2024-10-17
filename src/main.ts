@@ -6,6 +6,9 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 document.title = APP_NAME;
 app.innerHTML = APP_NAME;
 
+
+// canvas elements
+
 let gameName = document.createElement('h1');
 gameName.innerText = "Sketchpad";
 gameName.className = 'game-name';
@@ -21,7 +24,8 @@ let isDrawing = false;
 const points: { x: number; y: number }[][] = [];
 const context = canvas.getContext("2d");
 
-// Mouse events
+// mouse events
+
 canvas.addEventListener("mousedown", (e) => {
   const x = e.offsetX;
   const y = e.offsetY;
@@ -44,7 +48,8 @@ window.addEventListener("mouseup", () => {
   }
 });
 
-function redraw() {
+
+canvas.addEventListener("drawing-changed", () => {
   if (context) {
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.strokeStyle = "black";
@@ -63,11 +68,10 @@ function redraw() {
       }
     });
   }
-}
-
-canvas.addEventListener("drawing-changed", () => {
-  redraw();
 });
+
+
+// clear button
 
 let clear = document.createElement('button');
 clear.innerHTML = 'clear';
