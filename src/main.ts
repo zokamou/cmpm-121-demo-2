@@ -6,7 +6,6 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 document.title = APP_NAME;
 app.innerHTML = APP_NAME;
 
-
 let gameName = document.createElement('h1');
 gameName.innerText = "Sketchpad";
 gameName.className = 'game-name';
@@ -18,56 +17,66 @@ canvas.width = 256;
 canvas.height = 256;
 app.appendChild(canvas);
 
-
-
-
-
-// add mouse events
 let isDrawing = false;
-let x = 0;
-let y = 0;
-
+const points: { x: number; y: number }[][] = [];
 const context = canvas.getContext("2d");
 
+// Mouse events
 canvas.addEventListener("mousedown", (e) => {
-  x = e.offsetX;
-  y = e.offsetY;
+  const x = e.offsetX;
+  const y = e.offsetY;
   isDrawing = true;
+  points.push([{ x, y }]);
 });
 
 canvas.addEventListener("mousemove", (e) => {
   if (isDrawing) {
-    drawLine(context, x, y, e.offsetX, e.offsetY);
-    x = e.offsetX;
-    y = e.offsetY;
+    const newPoint = { x: e.offsetX, y: e.offsetY };
+    points[points.length - 1].push(newPoint);
+    canvas.dispatchEvent(new Event("drawing-changed")); 
   }
 });
 
-window.addEventListener("mouseup", (e) => {
+window.addEventListener("mouseup", () => {
   if (isDrawing) {
-    drawLine(context, x, y, e.offsetX, e.offsetY);
-    x = 0;
-    y = 0;
     isDrawing = false;
+    canvas.dispatchEvent(new Event("drawing-changed")); 
   }
 });
 
-function drawLine(context, x1, y1, x2, y2) {
-  context.beginPath();
-  context.strokeStyle = "black";
-  context.lineWidth = 1;
-  context.moveTo(x1, y1);
-  context.lineTo(x2, y2);
-  context.stroke();
-  context.closePath();
+function redraw() {
+  if (context) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.strokeStyle = "black";
+    context.lineWidth = 1;
+
+    points.forEach((line) => {
+      if (line.length > 1) {
+        context.beginPath();
+        for (let i = 1; i < line.length; i++) {
+          const { x: x1, y: y1 } = line[i - 1];
+          const { x: x2, y: y2 } = line[i];
+          context.moveTo(x1, y1);
+          context.lineTo(x2, y2);
+        }
+        context.stroke();
+      }
+    });
+  }
 }
+
+canvas.addEventListener("drawing-changed", () => {
+  redraw();
+});
 
 let clear = document.createElement('button');
 clear.innerHTML = 'clear';
-clear.className = 'clear-button'
+clear.className = 'clear-button';
 app.appendChild(clear);
 clear.addEventListener('click', () => {
-    if(context){
-        context.clearRect(0, 0, canvas.width, canvas.height)
-    }
-})
+  if (context) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    points.length = 0;
+    canvas.dispatchEvent(new Event("drawing-changed"));
+  }
+});
