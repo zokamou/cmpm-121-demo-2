@@ -6,9 +6,7 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 document.title = APP_NAME;
 app.innerHTML = APP_NAME;
 
-
-// canvas elements
-
+// Canvas elements
 let gameName = document.createElement('h1');
 gameName.innerText = "Sketchpad";
 gameName.className = 'game-name';
@@ -20,25 +18,57 @@ canvas.width = 256;
 canvas.height = 256;
 app.appendChild(canvas);
 
+let buttonbox = document.createElement('div');
+buttonbox.className = 'button-box';
+app.appendChild(buttonbox);
+
 let isDrawing = false;
-const points: { x: number; y: number }[][] = [];
-let redos: { x: number; y: number }[][] = [];
+const points: MarkerLine[] = [];
+let redos: MarkerLine[] = [];
 const context = canvas.getContext("2d");
 
-// mouse events
+class MarkerLine {
+  private points: { x: number; y: number }[];
 
+  constructor(x: number, y: number) {
+    this.points = [{ x, y }];
+  }
+
+  drag(x: number, y: number) {
+    this.points.push({ x, y });
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
+    if (this.points.length > 1) {
+      ctx.beginPath();
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 1;
+      for (let i = 1; i < this.points.length; i++) {
+        const { x: x1, y: y1 } = this.points[i - 1];
+        const { x: x2, y: y2 } = this.points[i];
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+      }
+      ctx.stroke();
+    }
+  }
+}
+
+// Mouse events
 canvas.addEventListener("mousedown", (e) => {
   const x = e.offsetX;
   const y = e.offsetY;
   isDrawing = true;
-  points.push([{ x, y }]);
+  const newLine = new MarkerLine(x, y);
+  points.push(newLine);
   redos = [];
 });
 
 canvas.addEventListener("mousemove", (e) => {
   if (isDrawing) {
-    const newPoint = { x: e.offsetX, y: e.offsetY };
-    points[points.length - 1].push(newPoint);
+    const x = e.offsetX;
+    const y = e.offsetY;
+    points[points.length - 1].drag(x, y);
     canvas.dispatchEvent(new Event("drawing-changed")); 
   }
 });
@@ -50,35 +80,18 @@ window.addEventListener("mouseup", () => {
   }
 });
 
-
 canvas.addEventListener("drawing-changed", () => {
   if (context) {
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.strokeStyle = "black";
-    context.lineWidth = 1;
-
-    points.forEach((line) => {
-      if (line.length > 1) {
-        context.beginPath();
-        for (let i = 1; i < line.length; i++) {
-          const { x: x1, y: y1 } = line[i - 1];
-          const { x: x2, y: y2 } = line[i];
-          context.moveTo(x1, y1);
-          context.lineTo(x2, y2);
-        }
-        context.stroke();
-      }
-    });
+    points.forEach((line) => line.display(context));
   }
 });
 
-
-// clear button
-
+// Clear button
 let clear = document.createElement('button');
 clear.innerHTML = 'clear';
 clear.className = 'clear-button';
-app.appendChild(clear);
+buttonbox.appendChild(clear);
 clear.addEventListener('click', () => {
   if (context) {
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -87,30 +100,28 @@ clear.addEventListener('click', () => {
   }
 });
 
-// undo button
-
+// Undo button
 let undo = document.createElement('button');
 undo.innerHTML = 'undo';
 undo.className = 'clear-button';
-app.appendChild(undo);
-undo.addEventListener('click', (e) => {
-    const undo = points.pop();
-    if (undo) {
-      redos.push(undo);
-    }
-    canvas.dispatchEvent(new Event("drawing-changed")); 
+buttonbox.appendChild(undo);
+undo.addEventListener('click', () => {
+  const undo = points.pop();
+  if (undo) {
+    redos.push(undo);
+  }
+  canvas.dispatchEvent(new Event("drawing-changed")); 
 });
 
-// redo button
+// Redo button
 let redo = document.createElement('button');
 redo.innerHTML = 'redo';
 redo.className = 'clear-button';
-app.appendChild(redo);
-redo.addEventListener('click', (e) => {
-    const redopop = redos.pop();
-    
-    if (redopop) {
-      points.push(redopop);
-    }
-    canvas.dispatchEvent(new Event("drawing-changed")); 
+buttonbox.appendChild(redo);
+redo.addEventListener('click', () => {
+  const redopop = redos.pop();
+  if (redopop) {
+    points.push(redopop);
+  }
+  canvas.dispatchEvent(new Event("drawing-changed")); 
 });
