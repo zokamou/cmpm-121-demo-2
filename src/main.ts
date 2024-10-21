@@ -5,6 +5,7 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 
 document.title = APP_NAME;
 app.innerHTML = APP_NAME;
+let lineWidth = 1;
 
 // Canvas elements
 let gameName = document.createElement('h1');
@@ -29,9 +30,11 @@ const context = canvas.getContext("2d");
 
 class MarkerLine {
   private points: { x: number; y: number }[];
+  lineWidth: number;
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, lineWidth:number) {
     this.points = [{ x, y }];
+    this.lineWidth = lineWidth
   }
 
   drag(x: number, y: number) {
@@ -42,7 +45,7 @@ class MarkerLine {
     if (this.points.length > 1) {
       ctx.beginPath();
       ctx.strokeStyle = "black";
-      ctx.lineWidth = 1;
+      ctx.lineWidth = this.lineWidth;
       for (let i = 1; i < this.points.length; i++) {
         const { x: x1, y: y1 } = this.points[i - 1];
         const { x: x2, y: y2 } = this.points[i];
@@ -59,7 +62,7 @@ canvas.addEventListener("mousedown", (e) => {
   const x = e.offsetX;
   const y = e.offsetY;
   isDrawing = true;
-  const newLine = new MarkerLine(x, y);
+  const newLine = new MarkerLine(x, y, lineWidth);
   points.push(newLine);
   redos = [];
 });
@@ -124,4 +127,26 @@ redo.addEventListener('click', () => {
     points.push(redopop);
   }
   canvas.dispatchEvent(new Event("drawing-changed")); 
+});
+
+// thin marker button
+let thin = document.createElement('button');
+thin.innerHTML = 'thin marker';
+thin.className = 'marker';
+buttonbox.appendChild(thin);
+thin.addEventListener('click', () => {
+  lineWidth = 1;
+  thin.className = 'marker-selected';
+  thick.className = 'marker';
+});
+
+// thin marker button
+let thick = document.createElement('button');
+thick.innerHTML = 'thick marker';
+thick.className = 'marker';
+buttonbox.appendChild(thick);
+thick.addEventListener('click', () => {
+  lineWidth = 5;
+  thick.className = 'marker-selected';
+  thin.className = 'marker';
 });
