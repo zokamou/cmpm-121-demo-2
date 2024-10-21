@@ -5,7 +5,7 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 
 document.title = APP_NAME;
 app.innerHTML = APP_NAME;
-let lineWidth = 1;
+let lineWidth = 3;
 
 // Canvas elements
 let gameName = document.createElement('h1');
@@ -24,6 +24,7 @@ buttonbox.className = 'button-box';
 app.appendChild(buttonbox);
 
 let isDrawing = false;
+let toolPreview: ToolPreview | null = null;
 const points: MarkerLine[] = [];
 let redos: MarkerLine[] = [];
 const context = canvas.getContext("2d");
@@ -32,9 +33,9 @@ class MarkerLine {
   private points: { x: number; y: number }[];
   lineWidth: number;
 
-  constructor(x: number, y: number, lineWidth:number) {
+  constructor(x: number, y: number, lineWidth: number) {
     this.points = [{ x, y }];
-    this.lineWidth = lineWidth
+    this.lineWidth = lineWidth;
   }
 
   drag(x: number, y: number) {
@@ -57,6 +58,32 @@ class MarkerLine {
   }
 }
 
+class ToolPreview {
+  x: number;
+  y: number;
+  radius: number;
+
+  constructor(x: number, y: number, radius: number) {
+    this.x = x;
+    this.y = y;
+    this.radius = radius;
+  }
+
+  updatePosition(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.beginPath();
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = lineWidth * 2;
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.closePath();
+  }
+}
+
 // Mouse events
 canvas.addEventListener("mousedown", (e) => {
   const x = e.offsetX;
@@ -68,11 +95,34 @@ canvas.addEventListener("mousedown", (e) => {
 });
 
 canvas.addEventListener("mousemove", (e) => {
+  const x = e.offsetX;
+  const y = e.offsetY;
+
   if (isDrawing) {
-    const x = e.offsetX;
-    const y = e.offsetY;
     points[points.length - 1].drag(x, y);
     canvas.dispatchEvent(new Event("drawing-changed")); 
+  } else {
+    if (!toolPreview) {
+      toolPreview = new ToolPreview(x, y, lineWidth / 2);
+    } else {
+      toolPreview.updatePosition(x, y);
+    }
+    canvas.dispatchEvent(new Event("tool-moved"));
+  }
+});
+
+canvas.addEventListener("tool-moved", () => {
+  if (context) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    points.forEach((line) => {
+      line.display(context);
+    });
+
+    if (!isDrawing && toolPreview) {
+      canvas.style.cursor = "none";
+      toolPreview.draw(context);
+    }
   }
 });
 
@@ -129,24 +179,24 @@ redo.addEventListener('click', () => {
   canvas.dispatchEvent(new Event("drawing-changed")); 
 });
 
-// thin marker button
+// Thin marker button
 let thin = document.createElement('button');
 thin.innerHTML = 'thin marker';
 thin.className = 'marker';
 buttonbox.appendChild(thin);
 thin.addEventListener('click', () => {
-  lineWidth = 1;
+  lineWidth = 3;
   thin.className = 'marker-selected';
   thick.className = 'marker';
 });
 
-// thin marker button
+// Thick marker button
 let thick = document.createElement('button');
 thick.innerHTML = 'thick marker';
 thick.className = 'marker';
 buttonbox.appendChild(thick);
 thick.addEventListener('click', () => {
-  lineWidth = 5;
+  lineWidth = 8;
   thick.className = 'marker-selected';
   thin.className = 'marker';
 });

@@ -96,6 +96,7 @@ h1 {
 .button-box {
   display: flex;
   flex-direction: row;
+  gap: 20px;
 }
 
 .logo {
