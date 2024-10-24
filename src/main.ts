@@ -6,6 +6,10 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 document.title = APP_NAME;
 app.innerHTML = APP_NAME;
 let lineWidth = 2;
+let emojiRotation = 0;
+let r = 0;
+let g = 0;
+let b = 0;
 
 // Canvas elements
 let gameName = document.createElement('h1');
@@ -37,11 +41,17 @@ class MarkerLine {
   // define as class properties
   private points: { x: number; y: number }[];
   lineWidth: number;
+  r:number;
+  g:number;
+  b:number;
 
-  constructor(x: number, y: number, lineWidth: number) {
+  constructor(x: number, y: number, lineWidth: number, r:number, g:number, b:number) {
     // actually initialize the values
     this.points = [{ x, y }];
     this.lineWidth = lineWidth;
+    this.r = r;
+    this.g = g;
+    this.b = b;
   }
 
   drag(x: number, y: number) {
@@ -52,7 +62,7 @@ class MarkerLine {
     // loops through points to create a line
     if (this.points.length > 1) {
       ctx.beginPath();
-      ctx.strokeStyle = "black";
+      ctx.strokeStyle = `rgb(${this.r},${this.g},${this.b})`;;
       ctx.lineWidth = this.lineWidth;
       for (let i = 1; i < this.points.length; i++) {
         const { x: x1, y: y1 } = this.points[i - 1];
@@ -69,16 +79,22 @@ class Sticker {
   emoji: string;
   x: number;
   y: number;
+  rotation: number;
 
-  constructor(emoji: string, x: number, y: number) {
+  constructor(emoji: string, x: number, y: number, rotation: number) {
     this.emoji = emoji;
     this.x = x;
     this.y = y;
+    this.rotation = rotation
   }
 
   preview(ctx: CanvasRenderingContext2D) {
-    ctx.font = '30px sans-serif';
-    ctx.fillText(this.emoji, this.x, this.y);
+    ctx.save();
+    ctx.font = `30px sans-serif`; 
+    ctx.translate(this.x, this.y);
+    ctx.rotate((this.rotation * Math.PI) / 180);
+    ctx.fillText(this.emoji, 0, 0);
+    ctx.restore();
   }
 
   drag(x: number, y: number) {
@@ -87,8 +103,12 @@ class Sticker {
   }
 
   display(ctx: CanvasRenderingContext2D) {
-    ctx.font = '30px sans-serif';
-    ctx.fillText(this.emoji, this.x, this.y);
+    ctx.save();
+    ctx.font = `30px sans-serif`; 
+    ctx.translate(this.x, this.y);
+    ctx.rotate((this.rotation * Math.PI) / 180); // Rotate the canvas
+    ctx.fillText(this.emoji, 0, 0);
+    ctx.restore();
   }
 }
 
@@ -98,12 +118,18 @@ let stickerPreview: Sticker | null = null;
 class ToolPreview {
   x: number;
   y: number;
+  r: number;
+  g:number;
+  b:number;
   radius: number;
 
-  constructor(x: number, y: number, radius: number) {
+  constructor(x: number, y: number, radius: number, r:number, g:number, b:number) {
     this.x = x;
     this.y = y;
     this.radius = radius;
+    this.r = r;
+    this.g = g;
+    this.b = b;
   }
 
   updatePosition(x: number, y: number) {
@@ -114,7 +140,7 @@ class ToolPreview {
   draw(ctx: CanvasRenderingContext2D) {
     // makes the circle cursor
     ctx.beginPath();
-    ctx.strokeStyle = "black";
+    ctx.strokeStyle = `rgb(${r},${g},${b})`;
     ctx.lineWidth = lineWidth;
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.stroke();
@@ -127,14 +153,14 @@ canvas.addEventListener("mousedown", (e) => {
   const x = e.offsetX;
   const y = e.offsetY;
   if (selectedSticker) {
-    const newSticker = new Sticker(selectedSticker.emoji, x-10, y+10);
+    const newSticker = new Sticker(selectedSticker.emoji, x, y, emojiRotation);
     points.push(newSticker);
     redos = [];
     stickerPreview = null;
     selectedSticker = null;
   } else {
     isDrawing = true;
-    const newLine = new MarkerLine(x, y, lineWidth);
+    const newLine = new MarkerLine(x, y, lineWidth, r, g, b);
     // add the Markerline to points
     points.push(newLine);
     redos = [];
@@ -150,11 +176,11 @@ canvas.addEventListener("mousemove", (e) => {
     points[points.length - 1].drag(x, y);
     canvas.dispatchEvent(new Event("drawing-changed"));
   } else if (selectedSticker) {
-    stickerPreview = new Sticker(selectedSticker.emoji, x-10, y+10);
+    stickerPreview = new Sticker(selectedSticker.emoji, x, y, emojiRotation);
     canvas.dispatchEvent(new Event("tool-moved"));
   } else {
     if (!toolPreview) {
-      toolPreview = new ToolPreview(x, y, lineWidth/2 );
+      toolPreview = new ToolPreview(x, y, lineWidth/2, r, g, b );
     } else {
       toolPreview.updatePosition(x, y);
     }
@@ -235,6 +261,9 @@ thin.innerHTML = 'thin marker';
 thin.className = 'marker-selected';
 buttonbox.appendChild(thin);
 thin.addEventListener('click', () => {
+  r = Math.random() * 255;
+  g = Math.random() * 255;
+  b = Math.random() * 255;
   lineWidth = 2;
   thin.className = 'marker-selected';
   thick.className = 'marker';
@@ -246,6 +275,9 @@ thick.innerHTML = 'thick marker';
 thick.className = 'marker';
 buttonbox.appendChild(thick);
 thick.addEventListener('click', () => {
+  r = Math.random() * 255;
+  g = Math.random() * 255;
+  b = Math.random() * 255;
   lineWidth = 5;
   thick.className = 'marker-selected';
   thin.className = 'marker';
@@ -268,7 +300,8 @@ const createStickerButtons = () => {
     stickerbox.appendChild(stickerButton);
 
     stickerButton.addEventListener('click', () => {
-      selectedSticker = new Sticker(stickerData.emoji, 0, 0); 
+      emojiRotation = Math.random() * 360;
+      selectedSticker = new Sticker(stickerData.emoji, 0, 0, emojiRotation); 
       canvas.dispatchEvent(new Event("tool-moved")); 
     });
   });
