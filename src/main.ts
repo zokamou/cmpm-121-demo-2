@@ -25,8 +25,8 @@ app.appendChild(buttonbox);
 
 let isDrawing = false;
 let toolPreview: ToolPreview | null = null;
-const points: MarkerLine[] = [];
-let redos: MarkerLine[] = [];
+const points: (MarkerLine | Sticker)[] = [];
+let redos: (MarkerLine | Sticker)[] = [];
 const context = canvas.getContext("2d");
 
 class MarkerLine {
@@ -58,6 +58,36 @@ class MarkerLine {
   }
 }
 
+class Sticker {
+  emoji: string;
+  x: number;
+  y: number;
+
+  constructor(emoji: string, x: number, y: number) {
+    this.emoji = emoji;
+    this.x = x;
+    this.y = y;
+  }
+
+  preview(ctx: CanvasRenderingContext2D) {
+    ctx.font = '30px sans-serif';
+    ctx.fillText(this.emoji, this.x, this.y);
+  }
+
+  drag(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
+    ctx.font = '30px sans-serif';
+    ctx.fillText(this.emoji, this.x, this.y);
+  }
+}
+
+let selectedSticker: Sticker | null = null;
+let stickerPreview: Sticker | null = null; 
+
 class ToolPreview {
   x: number;
   y: number;
@@ -88,10 +118,19 @@ class ToolPreview {
 canvas.addEventListener("mousedown", (e) => {
   const x = e.offsetX;
   const y = e.offsetY;
-  isDrawing = true;
-  const newLine = new MarkerLine(x, y, lineWidth);
-  points.push(newLine);
-  redos = [];
+  if (selectedSticker) {
+    const newSticker = new Sticker(selectedSticker.emoji, x, y);
+    points.push(newSticker);
+    redos = [];
+    stickerPreview = null;
+    selectedSticker = null;
+  } else {
+    // Drawing mode (line)
+    isDrawing = true;
+    const newLine = new MarkerLine(x, y, lineWidth);
+    points.push(newLine);
+    redos = [];
+  }
 });
 
 canvas.addEventListener("mousemove", (e) => {
@@ -100,7 +139,10 @@ canvas.addEventListener("mousemove", (e) => {
 
   if (isDrawing) {
     points[points.length - 1].drag(x, y);
-    canvas.dispatchEvent(new Event("drawing-changed")); 
+    canvas.dispatchEvent(new Event("drawing-changed"));
+  } else if (selectedSticker) {
+    stickerPreview = new Sticker(selectedSticker.emoji, x, y);
+    canvas.dispatchEvent(new Event("tool-moved"));
   } else {
     if (!toolPreview) {
       toolPreview = new ToolPreview(x, y, lineWidth / 2);
@@ -114,13 +156,12 @@ canvas.addEventListener("mousemove", (e) => {
 canvas.addEventListener("tool-moved", () => {
   if (context) {
     context.clearRect(0, 0, canvas.width, canvas.height);
-
-    points.forEach((line) => {
-      line.display(context);
+    points.forEach((lineOrSticker) => {
+      lineOrSticker.display(context);
     });
-
-    if (!isDrawing && toolPreview) {
-      canvas.style.cursor = "none";
+    if (stickerPreview) {
+      stickerPreview.preview(context);
+    } else if (!isDrawing && toolPreview) {
       toolPreview.draw(context);
     }
   }
@@ -199,4 +240,35 @@ thick.addEventListener('click', () => {
   lineWidth = 8;
   thick.className = 'marker-selected';
   thin.className = 'marker';
+});
+
+// Emoji Buttons
+let heart = document.createElement('button');
+heart.innerHTML = '🩷';
+heart.className = 'clear-button';
+buttonbox.appendChild(heart);
+
+let strawberry = document.createElement('button');
+strawberry.innerHTML = '🍓';
+strawberry.className = 'clear-button';
+buttonbox.appendChild(strawberry);
+
+let flower = document.createElement('button');
+flower.innerHTML = '🌼';
+flower.className = 'clear-button';
+buttonbox.appendChild(flower);
+
+heart.addEventListener('click', () => {
+  selectedSticker = new Sticker('🩷', 0, 0);
+  canvas.dispatchEvent(new Event("tool-moved"));
+});
+
+strawberry.addEventListener('click', () => {
+  selectedSticker = new Sticker('🍓', 0, 0);
+  canvas.dispatchEvent(new Event("tool-moved"));
+});
+
+flower.addEventListener('click', () => {
+  selectedSticker = new Sticker('🌼', 0, 0);
+  canvas.dispatchEvent(new Event("tool-moved"));
 });
