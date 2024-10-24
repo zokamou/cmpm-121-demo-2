@@ -20,8 +20,12 @@ canvas.height = 256;
 app.appendChild(canvas);
 
 let buttonbox = document.createElement('div');
+let stickerbox = document.createElement('div');
 buttonbox.className = 'button-box';
+stickerbox.className = 'sticker-box';
+
 app.appendChild(buttonbox);
+app.appendChild(stickerbox);
 
 let isDrawing = false;
 let toolPreview: ToolPreview | null = null;
@@ -243,32 +247,39 @@ thick.addEventListener('click', () => {
 });
 
 // Emoji Buttons
-let heart = document.createElement('button');
-heart.innerHTML = '🩷';
-heart.className = 'clear-button';
-buttonbox.appendChild(heart);
 
-let strawberry = document.createElement('button');
-strawberry.innerHTML = '🍓';
-strawberry.className = 'clear-button';
-buttonbox.appendChild(strawberry);
+const stickers = [
+  { emoji: '🩷', name: 'heart' },
+  { emoji: '🍓', name: 'strawberry' },
+  { emoji: '🌼', name: 'flower' }
+];
 
-let flower = document.createElement('button');
-flower.innerHTML = '🌼';
-flower.className = 'clear-button';
-buttonbox.appendChild(flower);
+const createStickerButtons = () => {
+  stickerbox.innerHTML = '';
+  stickers.forEach((stickerData) => {
+    const stickerButton = document.createElement('button');
+    stickerButton.innerHTML = stickerData.emoji;
+    stickerButton.className = 'clear-button';
+    stickerbox.appendChild(stickerButton);
 
-heart.addEventListener('click', () => {
-  selectedSticker = new Sticker('🩷', 0, 0);
-  canvas.dispatchEvent(new Event("tool-moved"));
-});
+    stickerButton.addEventListener('click', () => {
+      selectedSticker = new Sticker(stickerData.emoji, 0, 0); 
+      canvas.dispatchEvent(new Event("tool-moved")); 
+    });
+  });
 
-strawberry.addEventListener('click', () => {
-  selectedSticker = new Sticker('🍓', 0, 0);
-  canvas.dispatchEvent(new Event("tool-moved"));
-});
+  const customStickerButton = document.createElement('button');
+  customStickerButton.innerHTML = 'Create Emoji Sticker';
+  customStickerButton.className = 'clear-button';
+  stickerbox.appendChild(customStickerButton);
 
-flower.addEventListener('click', () => {
-  selectedSticker = new Sticker('🌼', 0, 0);
-  canvas.dispatchEvent(new Event("tool-moved"));
-});
+  customStickerButton.addEventListener('click', () => {
+    const customEmoji = prompt('Enter your emoji:', '');
+    if (customEmoji) {
+      stickers.push({ emoji: customEmoji, name: 'newEmoji' });
+      createStickerButtons();
+    }
+  });
+};
+
+createStickerButtons();
