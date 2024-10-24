@@ -34,10 +34,12 @@ let redos: (MarkerLine | Sticker)[] = [];
 const context = canvas.getContext("2d");
 
 class MarkerLine {
+  // define as class properties
   private points: { x: number; y: number }[];
   lineWidth: number;
 
   constructor(x: number, y: number, lineWidth: number) {
+    // actually initialize the values
     this.points = [{ x, y }];
     this.lineWidth = lineWidth;
   }
@@ -47,6 +49,7 @@ class MarkerLine {
   }
 
   display(ctx: CanvasRenderingContext2D) {
+    // loops through points to create a line
     if (this.points.length > 1) {
       ctx.beginPath();
       ctx.strokeStyle = "black";
@@ -109,6 +112,7 @@ class ToolPreview {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
+    // makes the circle cursor
     ctx.beginPath();
     ctx.strokeStyle = "black";
     ctx.lineWidth = lineWidth * 2;
@@ -129,9 +133,9 @@ canvas.addEventListener("mousedown", (e) => {
     stickerPreview = null;
     selectedSticker = null;
   } else {
-    // Drawing mode (line)
     isDrawing = true;
     const newLine = new MarkerLine(x, y, lineWidth);
+    // add the Markerline to points
     points.push(newLine);
     redos = [];
   }
@@ -142,6 +146,7 @@ canvas.addEventListener("mousemove", (e) => {
   const y = e.offsetY;
 
   if (isDrawing) {
+    // builds off of the Markerline that was created when mousedown
     points[points.length - 1].drag(x, y);
     canvas.dispatchEvent(new Event("drawing-changed"));
   } else if (selectedSticker) {
@@ -149,7 +154,7 @@ canvas.addEventListener("mousemove", (e) => {
     canvas.dispatchEvent(new Event("tool-moved"));
   } else {
     if (!toolPreview) {
-      toolPreview = new ToolPreview(x, y, lineWidth / 2);
+      toolPreview = new ToolPreview(x, y, lineWidth/2 );
     } else {
       toolPreview.updatePosition(x, y);
     }
@@ -269,7 +274,7 @@ const createStickerButtons = () => {
   });
 
   const customStickerButton = document.createElement('button');
-  customStickerButton.innerHTML = 'Create Emoji Sticker';
+  customStickerButton.innerHTML = 'create emoji sticker';
   customStickerButton.className = 'clear-button';
   stickerbox.appendChild(customStickerButton);
 
@@ -283,3 +288,39 @@ const createStickerButtons = () => {
 };
 
 createStickerButtons();
+
+const exportButton = document.createElement('button');
+  exportButton.innerHTML = 'export as PNG';
+  exportButton.className = 'clear-button';
+  buttonbox.appendChild(exportButton);
+
+  exportButton.addEventListener('click', () => {
+    exportCanvas();
+  });
+
+const exportCanvas = () => {
+  // make new canvas
+  const exportCanvas = document.createElement('canvas');
+  exportCanvas.width = 1024;
+  exportCanvas.height = 1024;
+  const exportCtx = exportCanvas.getContext('2d');
+
+  exportCtx!.fillStyle = 'white'; 
+  exportCtx!.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+  const scaleFactor = 4;
+  exportCtx!.scale(scaleFactor, scaleFactor);
+  
+
+  // redraw everything to the new canvas
+  points.forEach(item => {
+    item.display(exportCtx!);
+  });
+
+  // export
+  const dataURL = exportCanvas.toDataURL('image/png');
+  const anchor = document.createElement('a');
+  anchor.href = dataURL;
+  anchor.download = 'sketchpad.png';
+  anchor.click();
+};
