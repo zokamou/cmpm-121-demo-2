@@ -5,7 +5,7 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 
 document.title = APP_NAME;
 app.innerHTML = APP_NAME;
-let lineWidth = 3;
+let lineWidth = 2;
 
 // Canvas elements
 let gameName = document.createElement('h1');
@@ -115,7 +115,7 @@ class ToolPreview {
     // makes the circle cursor
     ctx.beginPath();
     ctx.strokeStyle = "black";
-    ctx.lineWidth = lineWidth * 2;
+    ctx.lineWidth = lineWidth;
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.closePath();
@@ -127,7 +127,7 @@ canvas.addEventListener("mousedown", (e) => {
   const x = e.offsetX;
   const y = e.offsetY;
   if (selectedSticker) {
-    const newSticker = new Sticker(selectedSticker.emoji, x, y);
+    const newSticker = new Sticker(selectedSticker.emoji, x-10, y+10);
     points.push(newSticker);
     redos = [];
     stickerPreview = null;
@@ -150,7 +150,7 @@ canvas.addEventListener("mousemove", (e) => {
     points[points.length - 1].drag(x, y);
     canvas.dispatchEvent(new Event("drawing-changed"));
   } else if (selectedSticker) {
-    stickerPreview = new Sticker(selectedSticker.emoji, x, y);
+    stickerPreview = new Sticker(selectedSticker.emoji, x-10, y+10);
     canvas.dispatchEvent(new Event("tool-moved"));
   } else {
     if (!toolPreview) {
@@ -232,10 +232,10 @@ redo.addEventListener('click', () => {
 // Thin marker button
 let thin = document.createElement('button');
 thin.innerHTML = 'thin marker';
-thin.className = 'marker';
+thin.className = 'marker-selected';
 buttonbox.appendChild(thin);
 thin.addEventListener('click', () => {
-  lineWidth = 3;
+  lineWidth = 2;
   thin.className = 'marker-selected';
   thick.className = 'marker';
 });
@@ -246,7 +246,7 @@ thick.innerHTML = 'thick marker';
 thick.className = 'marker';
 buttonbox.appendChild(thick);
 thick.addEventListener('click', () => {
-  lineWidth = 8;
+  lineWidth = 5;
   thick.className = 'marker-selected';
   thin.className = 'marker';
 });
