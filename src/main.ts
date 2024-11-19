@@ -11,6 +11,15 @@ let r = 0;
 let g = 0;
 let b = 0;
 
+function createInput(type: string, id: string, className?: string, value?: string): HTMLInputElement {
+  const input = document.createElement("input");
+  input.type = type;
+  input.id = id;
+  if (className) input.className = className;
+  if (value) input.value = value;
+  return input;
+}
+
 // Canvas elements
 let gameName = document.createElement('h1');
 gameName.innerText = "Sketchpad";
@@ -28,6 +37,10 @@ let stickerbox = document.createElement('div');
 buttonbox.className = 'button-box';
 stickerbox.className = 'sticker-box';
 
+const colorPicker = createInput("color", "colorPicker", "color-picker", "#000000");
+colorPicker.className = 'button-box';
+app.appendChild(colorPicker);
+
 app.appendChild(buttonbox);
 app.appendChild(stickerbox);
 
@@ -36,6 +49,7 @@ let toolPreview: ToolPreview | null = null;
 const points: (MarkerLine | Sticker)[] = [];
 let redos: (MarkerLine | Sticker)[] = [];
 const context = canvas.getContext("2d");
+let currentColor = "#000000";
 
 class MarkerLine {
   // define as class properties
@@ -240,6 +254,11 @@ undo.addEventListener('click', () => {
     redos.push(undo);
   }
   canvas.dispatchEvent(new Event("drawing-changed")); 
+});
+
+colorPicker.addEventListener("input", (e) => {
+  currentColor = (e.target as HTMLInputElement).value;
+  canvas.style.backgroundColor = currentColor;
 });
 
 // Redo button
