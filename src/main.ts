@@ -7,11 +7,19 @@ document.title = APP_NAME;
 app.innerHTML = APP_NAME;
 let lineWidth = 2;
 let emojiRotation = 0;
-let r = 0;
-let g = 0;
-let b = 0;
+let red = 0;
+let green = 0;
+let blue = 0;
+const CANVAS_SIZE = 256;
+const EXPORT_CANVAS_SIZE = 1024;
+const DEFAULT_COLOR = "#000000";
 
-function createInput(type: string, id: string, className?: string, value?: string): HTMLInputElement {
+function createInput(
+  type: string,
+  id: string,
+  className?: string,
+  value?: string
+): HTMLInputElement {
   const input = document.createElement("input");
   input.type = type;
   input.id = id;
@@ -20,52 +28,76 @@ function createInput(type: string, id: string, className?: string, value?: strin
   return input;
 }
 
+function createButton(
+  text: string,
+  className: string,
+  onClick: () => void
+): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.innerHTML = text;
+  button.className = className;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
 // Canvas elements
-let gameName = document.createElement('h1');
+let gameName = document.createElement("h1");
 gameName.innerText = "Sketchpad";
-gameName.className = 'game-name';
+gameName.className = "game-name";
 app.appendChild(gameName);
 
-let canvas = document.createElement('canvas');
-canvas.className = 'canvas';
-canvas.width = 256;
-canvas.height = 256;
+let canvas = document.createElement("canvas");
+canvas.className = "canvas";
+canvas.width = CANVAS_SIZE;
+canvas.height = CANVAS_SIZE;
 app.appendChild(canvas);
 
-let buttonbox = document.createElement('div');
-let stickerbox = document.createElement('div');
-buttonbox.className = 'button-box';
-stickerbox.className = 'sticker-box';
+let buttonBox = document.createElement("div");
+let stickerBox = document.createElement("div");
+buttonBox.className = "button-box";
+stickerBox.className = "sticker-box";
 
-const colorPicker = createInput("color", "colorPicker", "color-picker", "#000000");
-colorPicker.className = 'button-box';
+const colorPicker = createInput(
+  "color",
+  "colorPicker",
+  "color-picker",
+  DEFAULT_COLOR
+);
+colorPicker.className = "button-box";
 app.appendChild(colorPicker);
 
-app.appendChild(buttonbox);
-app.appendChild(stickerbox);
+app.appendChild(buttonBox);
+app.appendChild(stickerBox);
 
 let isDrawing = false;
 let toolPreview: ToolPreview | null = null;
 const points: (MarkerLine | Sticker)[] = [];
 let redos: (MarkerLine | Sticker)[] = [];
 const context = canvas.getContext("2d");
-let currentColor = "#000000";
+let currentColor = DEFAULT_COLOR;
 
 class MarkerLine {
   // define as class properties
   private points: { x: number; y: number }[];
   lineWidth: number;
-  r:number;
-  g:number;
-  b:number;
+  red: number;
+  green: number;
+  blue: number;
 
-  constructor(x: number, y: number, lineWidth: number, r:number, g:number, b:number) {
+  constructor(
+    x: number,
+    y: number,
+    lineWidth: number,
+    red: number,
+    green: number,
+    blue: number
+  ) {
     // actually initialize the values
     this.points = [{ x, y }];
     this.lineWidth = lineWidth;
-    this.r = r;
-    this.g = g;
-    this.b = b;
+    this.red = red;
+    this.green = green;
+    this.blue = blue;
   }
 
   drag(x: number, y: number) {
@@ -76,7 +108,7 @@ class MarkerLine {
     // loops through points to create a line
     if (this.points.length > 1) {
       ctx.beginPath();
-      ctx.strokeStyle = `rgb(${this.r},${this.g},${this.b})`;;
+      ctx.strokeStyle = `rgb(${this.red},${this.green},${this.blue})`;
       ctx.lineWidth = this.lineWidth;
       for (let i = 1; i < this.points.length; i++) {
         const { x: x1, y: y1 } = this.points[i - 1];
@@ -99,12 +131,12 @@ class Sticker {
     this.emoji = emoji;
     this.x = x;
     this.y = y;
-    this.rotation = rotation
+    this.rotation = rotation;
   }
 
   preview(ctx: CanvasRenderingContext2D) {
     ctx.save();
-    ctx.font = `30px sans-serif`; 
+    ctx.font = `30px sans-serif`;
     ctx.translate(this.x, this.y);
     ctx.rotate((this.rotation * Math.PI) / 180);
     ctx.fillText(this.emoji, 0, 0);
@@ -118,7 +150,7 @@ class Sticker {
 
   display(ctx: CanvasRenderingContext2D) {
     ctx.save();
-    ctx.font = `30px sans-serif`; 
+    ctx.font = `30px sans-serif`;
     ctx.translate(this.x, this.y);
     ctx.rotate((this.rotation * Math.PI) / 180); // Rotate the canvas
     ctx.fillText(this.emoji, 0, 0);
@@ -127,23 +159,30 @@ class Sticker {
 }
 
 let selectedSticker: Sticker | null = null;
-let stickerPreview: Sticker | null = null; 
+let stickerPreview: Sticker | null = null;
 
 class ToolPreview {
   x: number;
   y: number;
-  r: number;
-  g:number;
-  b:number;
+  red: number;
+  green: number;
+  blue: number;
   radius: number;
 
-  constructor(x: number, y: number, radius: number, r:number, g:number, b:number) {
+  constructor(
+    x: number,
+    y: number,
+    radius: number,
+    red: number,
+    green: number,
+    blue: number
+  ) {
     this.x = x;
     this.y = y;
     this.radius = radius;
-    this.r = r;
-    this.g = g;
-    this.b = b;
+    this.red = red;
+    this.green = green;
+    this.blue = blue;
   }
 
   updatePosition(x: number, y: number) {
@@ -154,7 +193,7 @@ class ToolPreview {
   draw(ctx: CanvasRenderingContext2D) {
     // makes the circle cursor
     ctx.beginPath();
-    ctx.strokeStyle = `rgb(${r},${g},${b})`;
+    ctx.strokeStyle = `rgb(${red},${green},${blue})`;
     ctx.lineWidth = lineWidth;
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.stroke();
@@ -174,7 +213,7 @@ canvas.addEventListener("mousedown", (e) => {
     selectedSticker = null;
   } else {
     isDrawing = true;
-    const newLine = new MarkerLine(x, y, lineWidth, r, g, b);
+    const newLine = new MarkerLine(x, y, lineWidth, red, green, blue);
     // add the Markerline to points
     points.push(newLine);
     redos = [];
@@ -194,7 +233,7 @@ canvas.addEventListener("mousemove", (e) => {
     canvas.dispatchEvent(new Event("tool-moved"));
   } else {
     if (!toolPreview) {
-      toolPreview = new ToolPreview(x, y, lineWidth/2, r, g, b );
+      toolPreview = new ToolPreview(x, y, lineWidth / 2, red, green, blue);
     } else {
       toolPreview.updatePosition(x, y);
     }
@@ -202,9 +241,14 @@ canvas.addEventListener("mousemove", (e) => {
   }
 });
 
+// Helper function to clear the canvas context
+function clearCanvas(ctx, width = canvas.width, height = canvas.height) {
+  ctx.clearRect(0, 0, width, height);
+}
+
 canvas.addEventListener("tool-moved", () => {
   if (context) {
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    clearCanvas(context);
     points.forEach((lineOrSticker) => {
       lineOrSticker.display(context);
     });
@@ -219,42 +263,32 @@ canvas.addEventListener("tool-moved", () => {
 window.addEventListener("mouseup", () => {
   if (isDrawing) {
     isDrawing = false;
-    canvas.dispatchEvent(new Event("drawing-changed")); 
+    canvas.dispatchEvent(new Event("drawing-changed"));
   }
 });
 
 canvas.addEventListener("drawing-changed", () => {
   if (context) {
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    clearCanvas(context);
     points.forEach((line) => line.display(context));
   }
 });
 
 // Clear button
-let clear = document.createElement('button');
-clear.innerHTML = 'clear';
-clear.className = 'clear-button';
-buttonbox.appendChild(clear);
-clear.addEventListener('click', () => {
-  if (context) {
-    context.clearRect(0, 0, canvas.width, canvas.height);
+buttonBox.appendChild(
+  createButton("Clear", "clear-button", () => {
     points.length = 0;
     canvas.dispatchEvent(new Event("drawing-changed"));
-  }
-});
+  })
+);
 
 // Undo button
-let undo = document.createElement('button');
-undo.innerHTML = 'undo';
-undo.className = 'clear-button';
-buttonbox.appendChild(undo);
-undo.addEventListener('click', () => {
-  const undo = points.pop();
-  if (undo) {
-    redos.push(undo);
-  }
-  canvas.dispatchEvent(new Event("drawing-changed")); 
-});
+buttonBox.appendChild(
+  createButton("Undo", "clear-button", () => {
+    if (points.length) redos.push(points.pop()!);
+    canvas.dispatchEvent(new Event("drawing-changed"));
+  })
+);
 
 colorPicker.addEventListener("input", (e) => {
   currentColor = (e.target as HTMLInputElement).value;
@@ -262,78 +296,75 @@ colorPicker.addEventListener("input", (e) => {
 });
 
 // Redo button
-let redo = document.createElement('button');
-redo.innerHTML = 'redo';
-redo.className = 'clear-button';
-buttonbox.appendChild(redo);
-redo.addEventListener('click', () => {
-  const redopop = redos.pop();
-  if (redopop) {
-    points.push(redopop);
-  }
-  canvas.dispatchEvent(new Event("drawing-changed")); 
-});
+buttonBox.appendChild(
+  createButton("Redo", "clear-button", () => {
+    const redopop = redos.pop();
+    if (redopop) {
+      points.push(redopop);
+    }
+    canvas.dispatchEvent(new Event("drawing-changed"));
+  })
+);
 
 // Thin marker button
-let thin = document.createElement('button');
-thin.innerHTML = 'thin marker';
-thin.className = 'marker-selected';
-buttonbox.appendChild(thin);
-thin.addEventListener('click', () => {
-  r = Math.random() * 255;
-  g = Math.random() * 255;
-  b = Math.random() * 255;
+let thin = document.createElement("button");
+thin.innerHTML = "Thin Marker";
+thin.className = "marker-selected";
+buttonBox.appendChild(thin);
+thin.addEventListener("click", () => {
+  red = Math.random() * 255;
+  green = Math.random() * 255;
+  blue = Math.random() * 255;
   lineWidth = 2;
-  thin.className = 'marker-selected';
-  thick.className = 'marker';
+  thin.className = "marker-selected";
+  thick.className = "marker";
 });
 
 // Thick marker button
-let thick = document.createElement('button');
-thick.innerHTML = 'thick marker';
-thick.className = 'marker';
-buttonbox.appendChild(thick);
-thick.addEventListener('click', () => {
-  r = Math.random() * 255;
-  g = Math.random() * 255;
-  b = Math.random() * 255;
+let thick = document.createElement("button");
+thick.innerHTML = "Thick Marker";
+thick.className = "marker";
+buttonBox.appendChild(thick);
+thick.addEventListener("click", () => {
+  red = Math.random() * 255;
+  green = Math.random() * 255;
+  blue = Math.random() * 255;
   lineWidth = 5;
-  thick.className = 'marker-selected';
-  thin.className = 'marker';
+  thick.className = "marker-selected";
+  thin.className = "marker";
 });
 
 // Emoji Buttons
-
 const stickers = [
-  { emoji: '🩷', name: 'heart' },
-  { emoji: '🍓', name: 'strawberry' },
-  { emoji: '🌼', name: 'flower' }
+  { emoji: "🩷", name: "heart" },
+  { emoji: "🍓", name: "strawberry" },
+  { emoji: "🌼", name: "flower" },
 ];
 
 const createStickerButtons = () => {
-  stickerbox.innerHTML = '';
+  stickerBox.innerHTML = "";
   stickers.forEach((stickerData) => {
-    const stickerButton = document.createElement('button');
+    const stickerButton = document.createElement("button");
     stickerButton.innerHTML = stickerData.emoji;
-    stickerButton.className = 'clear-button';
-    stickerbox.appendChild(stickerButton);
+    stickerButton.className = "clear-button";
+    stickerBox.appendChild(stickerButton);
 
-    stickerButton.addEventListener('click', () => {
+    stickerButton.addEventListener("click", () => {
       emojiRotation = Math.random() * 360;
-      selectedSticker = new Sticker(stickerData.emoji, 0, 0, emojiRotation); 
-      canvas.dispatchEvent(new Event("tool-moved")); 
+      selectedSticker = new Sticker(stickerData.emoji, 0, 0, emojiRotation);
+      canvas.dispatchEvent(new Event("tool-moved"));
     });
   });
 
-  const customStickerButton = document.createElement('button');
-  customStickerButton.innerHTML = 'create emoji sticker';
-  customStickerButton.className = 'clear-button';
-  stickerbox.appendChild(customStickerButton);
+  const customStickerButton = document.createElement("button");
+  customStickerButton.innerHTML = "Create Emoji Sticker";
+  customStickerButton.className = "clear-button";
+  stickerBox.appendChild(customStickerButton);
 
-  customStickerButton.addEventListener('click', () => {
-    const customEmoji = prompt('Enter your emoji:', '');
+  customStickerButton.addEventListener("click", () => {
+    const customEmoji = prompt("Enter your emoji:", "");
     if (customEmoji) {
-      stickers.push({ emoji: customEmoji, name: 'newEmoji' });
+      stickers.push({ emoji: customEmoji, name: "newEmoji" });
       createStickerButtons();
     }
   });
@@ -341,38 +372,37 @@ const createStickerButtons = () => {
 
 createStickerButtons();
 
-const exportButton = document.createElement('button');
-  exportButton.innerHTML = 'export as PNG';
-  exportButton.className = 'clear-button';
-  buttonbox.appendChild(exportButton);
+const exportButton = document.createElement("button");
+exportButton.innerHTML = "Export as PNG";
+exportButton.className = "clear-button";
+buttonBox.appendChild(exportButton);
 
-  exportButton.addEventListener('click', () => {
-    exportCanvas();
-  });
+exportButton.addEventListener("click", () => {
+  exportCanvas();
+});
 
 const exportCanvas = () => {
   // make new canvas
-  const exportCanvas = document.createElement('canvas');
-  exportCanvas.width = 1024;
-  exportCanvas.height = 1024;
-  const exportCtx = exportCanvas.getContext('2d');
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = EXPORT_CANVAS_SIZE;
+  exportCanvas.height = EXPORT_CANVAS_SIZE;
+  const exportCtx = exportCanvas.getContext("2d");
 
-  exportCtx!.fillStyle = 'white'; 
+  exportCtx!.fillStyle = "white";
   exportCtx!.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
 
   const scaleFactor = 4;
   exportCtx!.scale(scaleFactor, scaleFactor);
-  
 
   // redraw everything to the new canvas
-  points.forEach(item => {
+  points.forEach((item) => {
     item.display(exportCtx!);
   });
 
   // export
-  const dataURL = exportCanvas.toDataURL('image/png');
-  const anchor = document.createElement('a');
+  const dataURL = exportCanvas.toDataURL("image/png");
+  const anchor = document.createElement("a");
   anchor.href = dataURL;
-  anchor.download = 'sketchpad.png';
+  anchor.download = "sketchpad.png";
   anchor.click();
 };
